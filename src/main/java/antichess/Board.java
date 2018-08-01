@@ -348,10 +348,10 @@ public class Board {
             return Definitions.DERIVED_STALEMATE;
         }
         if (this.isWon() == Definitions.WHITE) {
-            return Definitions.WHITE_WINS;
+            return Definitions.BLACK_WINS;
         }
         if (this.isWon() == Definitions.BLACK) {
-            return Definitions.BLACK_WINS;
+            return Definitions.WHITE_WINS;
         }
         return Definitions.NO_WIN;
 
