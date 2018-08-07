@@ -6,6 +6,9 @@ package antichess;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class Game {
     private boolean gameRunning = true;
@@ -17,7 +20,28 @@ public class Game {
     private HumanBoard currentHumanBoard;
 
     public Game(int whitePlayerType, Object whitePlayerOptions, int blackPlayerType, Object blackPlayerOptions) {
-        currentBoard = new Board();
+        System.out.print("Would you like to play chess 960? (y/n): ");
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        boolean gameIs960;
+        String input = "";
+        try {
+            input = br.readLine();
+            while(!input.toLowerCase().trim().equals("n") && !input.toLowerCase().trim().equals("y")) {
+                input = br.readLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if(input.toLowerCase().trim().equals("n")) {
+            gameIs960 = false;
+        }
+        else {
+            gameIs960 = true;
+        }
+
+
+        currentBoard = new Board(gameIs960);
         currentHumanBoard = new HumanBoard(currentBoard, Definitions.FRAME_SIZE);
 
         switch (whitePlayerType) {

@@ -1,14 +1,16 @@
 package antichess;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Board {
     public Piece[][] squares;
     public ArrayList<Move> validMoves;
     public ArrayList<Move> validCaptures;
     public ArrayList<Piece>[] remainingPieces;
+    private Random r = new Random();
 
-    public Board() {
+    private Board() {
         // initialise the array lists
         validMoves = new ArrayList<Move>();
         validCaptures = new ArrayList<Move>();
@@ -19,6 +21,186 @@ public class Board {
 
         //Initialises the board.
         squares = new Piece[8][8];
+        standardBoardPlacements();
+    }
+
+    public Board(boolean isGameChess960) {
+        // initialise the array lists
+        validMoves = new ArrayList<Move>();
+        validCaptures = new ArrayList<Move>();
+        remainingPieces = new ArrayList[2];
+        remainingPieces[Definitions.WHITE] = new ArrayList<Piece>();
+        remainingPieces[Definitions.BLACK] = new ArrayList<Piece>();
+
+
+        //Initialises the board.
+        squares = new Piece[8][8];
+
+        if(isGameChess960) {
+            chess960BoardPlacements();
+        } else {
+            standardBoardPlacements();
+        }
+    }
+
+    private void chess960BoardPlacements() {
+
+        // Place first bishop randomly
+        int firstBishop = getFirstBishopPosition();
+        // Place second bishop on random spot of opposite color of first bishop
+        int secondBishop = getSecondBishopPositionOnOppositeColorFromFirst(firstBishop);
+        // Place first rook
+        int firstRook = getFirstRookPositionFromUntakenPositions(firstBishop, secondBishop);
+        // Place 2cd rook on random side that has 2+ open spaces. If one side has one or zero open spaces place on other side
+        int secondRook = getSecondRookPositionFromRandomSideWithTwoPlusOpenSquares(firstBishop, secondBishop, firstRook);
+        // Place king in random open space between rooks
+        int king = getKingPositionFromBetweenRooks(firstRook, secondRook, firstBishop, secondBishop);
+        // Place Queen in random open spot
+        int queen = getQueenPosition(firstBishop, secondBishop, firstRook, secondRook, king);
+        // Place knights in last two remaining spots
+        int firstKnight = getFirstKnightFromRemainingPositions(firstBishop, secondBishop, firstRook, secondRook, king, queen);
+        int secondKnight = getSecondKnightFromRemainingPositions(firstBishop, secondBishop, firstRook, secondRook, king, queen, firstKnight);
+
+        makePiece(firstBishop, 0, Definitions.BISHOP, Definitions.WHITE);
+        makePiece(secondBishop, 0, Definitions.BISHOP, Definitions.WHITE);
+        makePiece(firstRook, 0, Definitions.ROOK, Definitions.WHITE);
+        makePiece(secondRook, 0, Definitions.ROOK, Definitions.WHITE);
+        makePiece(king, 0, Definitions.KING, Definitions.WHITE);
+        makePiece(queen, 0, Definitions.QUEEN, Definitions.WHITE);
+        makePiece(firstKnight, 0, Definitions.KNIGHT, Definitions.WHITE);
+        makePiece(secondKnight, 0, Definitions.KNIGHT, Definitions.WHITE);
+
+        for (int i = 0; i < 8; i++) {
+            makePiece(i, 1, Definitions.PAWN, Definitions.WHITE);
+            makePiece(i, 6, Definitions.PAWN, Definitions.BLACK);
+        }
+
+        makePiece(firstBishop, 7, Definitions.BISHOP, Definitions.BLACK);
+        makePiece(secondBishop, 7, Definitions.BISHOP, Definitions.BLACK);
+        makePiece(firstRook, 7, Definitions.ROOK, Definitions.BLACK);
+        makePiece(secondRook, 7, Definitions.ROOK, Definitions.BLACK);
+        makePiece(king, 7, Definitions.KING, Definitions.BLACK);
+        makePiece(queen, 7, Definitions.QUEEN, Definitions.BLACK);
+        makePiece(firstKnight, 7, Definitions.KNIGHT, Definitions.BLACK);
+        makePiece(secondKnight, 7, Definitions.KNIGHT, Definitions.BLACK);
+
+    }
+
+    private int getSecondKnightFromRemainingPositions(int firstBishop, int secondBishop, int firstRook, int secondRook, int king, int queen, int firstKnight) {
+        int position = r.nextInt(8);
+        while(position == firstBishop || position == secondBishop || position == firstRook || position == secondRook || position == king || position == queen || position == firstKnight) {
+            position = r.nextInt(8);
+        }
+        return position;
+    }
+
+    private int getFirstKnightFromRemainingPositions(int firstBishop, int secondBishop, int firstRook, int secondRook, int king, int queen) {
+        int position = r.nextInt(8);
+        while(position == firstBishop || position == secondBishop || position == firstRook || position == secondRook || position == king || position == queen) {
+            position = r.nextInt(8);
+        }
+        return position;
+    }
+
+    private int getQueenPosition(int firstBishop, int secondBishop, int firstRook, int secondRook, int king) {
+        int position = r.nextInt(8);
+        while(position == firstBishop || position == secondBishop || position == firstRook || position == secondRook || position == king) {
+            position = r.nextInt(8);
+        }
+        return position;
+    }
+
+    private int getKingPositionFromBetweenRooks(int firstRook, int secondRook, int firstBishop, int secondBishop) {
+        int min = 10;
+        int max = -1;
+        if(firstRook > secondRook) {
+            min = secondRook;
+            max = firstRook;
+        }
+        else {
+            min = firstRook;
+            max = secondRook;
+        }
+        int position = r.nextInt(max - min) + min + 1;
+        while(position == firstBishop || position == secondBishop || position == firstRook) {
+            position = r.nextInt(max - min) + min + 1;
+        }
+        return position;
+    }
+
+    private int getSecondRookPositionFromRandomSideWithTwoPlusOpenSquares(int firstBishop, int secondBishop, int firstRook) {
+        char[] takenPositions = {'#', '#', '#', '#', '#', '#', '#', '#'};
+        int position = -1;
+        for(int j = 0; j < takenPositions.length; j++) {
+            if(j == firstBishop || j == secondBishop || j == firstRook) {
+                takenPositions[j] = '*';
+            }
+        }
+        int leftCount = 0;
+        int rightCount = 0;
+        for(int j = 0; j < firstRook; j++) {
+            if(takenPositions[j] == '#') {
+                leftCount++;
+            }
+        }
+        for(int j = firstRook + 1; j < takenPositions.length; j++) {
+            if(takenPositions[j] == '#') {
+                rightCount++;
+            }
+        }
+        if(leftCount < 2) {
+            position = r.nextInt(8 - firstRook) + firstRook;
+            while(position == firstBishop || position == secondBishop || position == firstRook) {
+                position = r.nextInt(8 - firstRook) + firstRook;
+            }
+        }
+        else if(rightCount < 2) {
+            position = r.nextInt(firstRook);
+            while(position == firstBishop || position == secondBishop || position == firstRook) {
+                position = r.nextInt(firstRook);
+            }
+        }
+        else {
+            boolean isLeft = r.nextBoolean();
+            if(isLeft) {
+                position = r.nextInt(firstRook);
+                while(position == firstBishop || position == secondBishop || position == firstRook) {
+                    position = r.nextInt(firstRook);
+                }
+            } else {
+                position = r.nextInt(8 - firstRook) + firstRook;
+                while(position == firstBishop || position == secondBishop || position == firstRook) {
+                    position = r.nextInt(8 - firstRook) + firstRook;
+                }
+            }
+        }
+        return position;
+    }
+
+    private int getFirstRookPositionFromUntakenPositions(int firstBishop, int secondBishop) {
+        int position = r.nextInt(8);
+        while(position == firstBishop || position == secondBishop) {
+            position = r.nextInt(8);
+        }
+        return position;
+    }
+
+    private int getSecondBishopPositionOnOppositeColorFromFirst(int firstBishop) {
+        int[] whiteSquares = {1, 3, 5, 7};
+        int[] blackSquares = {0, 2, 4, 6};
+        if(firstBishop % 2 == 0) {
+            return whiteSquares[r.nextInt(4)];
+        }
+        else {
+            return blackSquares[r.nextInt(4)];
+        }
+    }
+
+    private int getFirstBishopPosition() {
+        return r.nextInt(8);
+    }
+
+    public void standardBoardPlacements() {
 
         makePiece(0, 0, Definitions.ROOK, Definitions.WHITE);
         makePiece(1, 0, Definitions.KNIGHT, Definitions.WHITE);
@@ -45,6 +227,7 @@ public class Board {
 
 
     }
+
 
     public Board(int testNumber) {
         this();  // Inherit code from first Board constructor

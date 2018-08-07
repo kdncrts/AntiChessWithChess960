@@ -8,7 +8,7 @@ public class AIBoard extends Board {
     private int playerColour;
 
     public AIBoard(int playerColour, int[] pieceValues) {
-        super();
+        super(true);
         historyStack = new Stack<HistoryMove>();
         this.pieceValues = pieceValues;
         this.playerColour = playerColour;
